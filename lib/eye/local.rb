@@ -54,6 +54,10 @@ module Eye::Local
       path("processes#{ENV['EYE_V']}.cache")
     end
 
+    def pids_path
+      path("eye#{ENV['EYE_V']}.pids")
+    end
+
     def client_timeout
       @client_timeout ||= 5
     end

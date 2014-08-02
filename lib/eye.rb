@@ -21,6 +21,7 @@ module Eye
   autoload :Config,         'eye/config'
   autoload :Reason,         'eye/reason'
   autoload :Sigar,          'eye/sigar'
+  autoload :PidIdentity,    'eye/pid_identity'
 
   autoload :Controller,     'eye/controller'
   autoload :Control,        'eye/control'

@@ -37,6 +37,7 @@ class Eye::Controller
 
     Celluloid::logger = Eye::Logger.new('celluloid')
     Eye::SystemResources.cache
+    Eye::PidIdentity.set_actor(Eye::Local.pids_path)
 
     info "starting #{Eye::ABOUT} <#{$$}>"
   end

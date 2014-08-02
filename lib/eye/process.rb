@@ -17,7 +17,8 @@ class Eye::Process
   autoload :Scheduler,        'eye/process/scheduler'
   autoload :Validate,         'eye/process/validate'
 
-  attr_accessor :pid, :parent_pid,
+  attr_reader   :pid
+  attr_accessor :parent_pid,
                 :watchers, :config, :states_history,
                 :children, :triggers, :name, :state_reason, :flapping_times
 

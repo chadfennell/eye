@@ -25,6 +25,12 @@ class Eye::SystemResources
       end
     end
 
+    def start_time_ms(pid)
+      if cpu = cache.proc_cpu(pid)
+        cpu.start_time.to_i
+      end
+    end
+
     # total cpu usage in seconds
     def cputime(pid)
       if cpu = cache.proc_cpu(pid)

@@ -143,6 +143,10 @@ module C
     C.sample_dir + "/1#{process_id}.tmp"
   end
 
+  def tmp_file_pids
+    C.sample_dir + "/1#{process_id}.pids.tmp"
+  end
+
   def check_mem(a = {})
     {:memory => {:type => :memory, :every => 2.seconds, :below => 100.megabytes, :times => [3,5]}.merge(a)}
   end

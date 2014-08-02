@@ -12,7 +12,8 @@ module Eye::Controller::Status
       :logger => Eye::Logger.args.present? ? [Eye::Logger.dev, *Eye::Logger.args] : Eye::Logger.dev,
       :pid_path => Eye::Local::pid_path,
       :sock_path => Eye::Local::socket_path,
-      :actors => actors
+      :actors => actors,
+      :pid_identity => Eye::PidIdentity.actor.pids
     }
 
     res[:config_yaml] = YAML.dump(current_config.to_h) if h[:config].present?
