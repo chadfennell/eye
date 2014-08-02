@@ -34,8 +34,8 @@ private
   def check_alive
     if up?
       if process_really_running?
-        check_pid_file
         check_pid_identity
+        check_pid_file
       else
         warn "check_alive: process <#{self.pid}> not found"
         notify :info, 'crashed!'
