@@ -64,6 +64,8 @@ module Eye::Controller::Commands
 private
 
   def quit
+    Eye::PidIdentity.save
+
     info 'Quit!'
     Eye::System.send_signal($$, :TERM)
     sleep 1

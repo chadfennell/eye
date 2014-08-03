@@ -90,6 +90,7 @@ RSpec.configure do |config|
       @pids.each { |p| force_kill_pid(p) }
     end
 
+    Eye::PidIdentity.clear
     terminate_old_actors
 
     # actors = Celluloid::Actor.all.map(&:class)

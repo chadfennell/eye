@@ -28,6 +28,10 @@ class Eye::PidIdentity
     def check_identity(pid)
       actor.check_identity(pid)
     end
+
+    def clear
+      @actor.clear if @actor
+    end
   end
 
   class Actor
@@ -52,9 +56,13 @@ class Eye::PidIdentity
 
     def sync
       if @need_sync
-        save_file(@filename, @pids)
+        save
         @need_sync = false
       end
+    end
+
+    def save
+      save_file(@filename, @pids) if @filename
     end
 
     def identity(pid)
@@ -73,6 +81,11 @@ class Eye::PidIdentity
 
     def system_identity(pid)
       Eye::SystemResources.start_time_ms(pid)
+    end
+
+    def clear
+      @pids.select! { |pid, value| pid == $$ }
+      @need_sync = true
     end
 
     # nil - identity not found

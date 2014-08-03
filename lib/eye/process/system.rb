@@ -5,7 +5,7 @@ module Eye::Process::System
   def pid=(new_pid)
     Eye::PidIdentity.remove_identity(self.pid) if self.pid && self.pid != new_pid
     @pid = new_pid
-    Eye::PidIdentity.set_identity(@pid)
+    Eye::PidIdentity.set_identity(@pid) if @pid
   end
 
   def load_pid_from_file
@@ -16,6 +16,7 @@ module Eye::Process::System
 
     if res && (Eye::PidIdentity.check_identity(res) == false)
       warn "pid_identity for <#{res}> is wrong, pid_file probably pointed to wrong process, skipping this pid"
+      Eye::PidIdentity.remove_identity(res)
       clear_pid_file
       res = nil
     end
