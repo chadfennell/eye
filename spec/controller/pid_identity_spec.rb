@@ -156,6 +156,9 @@ describe "Eye::PidIdentity" do
 
     @process.state_name.should == :up
     @process.pid.should_not == pid
+
+    Eye::PidIdentity.identity(pid).should be_nil
+    Eye::PidIdentity.identity(@process.pid).should be
   end
 
   it "emulate, eye trusting external pid_file change, and update pid, should update identity too, and remove old identity" do

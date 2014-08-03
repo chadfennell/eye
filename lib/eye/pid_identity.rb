@@ -44,7 +44,6 @@ class Eye::PidIdentity
       @pids = {}
       @need_sync = false
       load
-      async.set_identity($$)
       every(interval) { sync } if @filename
     end
 
@@ -84,7 +83,7 @@ class Eye::PidIdentity
     end
 
     def clear
-      @pids.select! { |pid, value| pid == $$ }
+      @pids = {}
       @need_sync = true
     end
 

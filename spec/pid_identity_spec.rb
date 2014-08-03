@@ -2,6 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 describe Eye::PidIdentity do
   subject { Eye::PidIdentity }
+  before { Eye::PidIdentity.set_identity($$) }
 
   it "should save" do
     stub(subject.actor).system_identity(1111) { 22222 }
