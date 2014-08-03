@@ -64,7 +64,7 @@ module Eye::Controller::Commands
 private
 
   def quit
-    Eye::PidIdentity.save
+    Eye::PidIdentity.actor.save
 
     info 'Quit!'
     Eye::System.send_signal($$, :TERM)
