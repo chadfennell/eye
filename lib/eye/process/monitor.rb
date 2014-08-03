@@ -34,8 +34,7 @@ private
   def check_alive
     if up?
       if process_really_running?
-        check_pid_identity
-        check_pid_file
+        check_pid_identity && check_pid_file
       else
         warn "check_alive: process <#{self.pid}> not found"
         notify :info, 'crashed!'
@@ -47,14 +46,15 @@ private
   end
 
   def check_pid_identity
-    p Eye::PidIdentity.actor.pids
-    p Eye::PidIdentity.check_identity(self.pid)
     if Eye::PidIdentity.check_identity(self.pid) == false
       warn "check_alive: process <#{self.pid}> identity changed"
       notify :info, 'crashed by pid identity!'
       clear_pid_file if control_pid? && self.pid && load_pid_from_file == self.pid
 
       switch :crashed, Eye::Reason.new(:crashed_pid_identity)
+      false
+    else
+      true
     end
   end
 

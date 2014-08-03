@@ -16,6 +16,7 @@ module Eye::Process::System
 
     if res && (Eye::PidIdentity.check_identity(res) == false)
       warn "pid_identity for <#{res}> is wrong, pid_file probably pointed to wrong process, skipping this pid"
+      clear_pid_file
       res = nil
     end
 
