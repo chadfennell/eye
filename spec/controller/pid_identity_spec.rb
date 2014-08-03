@@ -85,6 +85,24 @@ describe "Eye::PidIdentity" do
       @process.state_name.should == :up
       Eye::PidIdentity.identity(@pid).should be
     end
+
+    it "process not exists, identity is, should rewrite" do
+      cfg = C.p1
+      File.open(cfg[:pid_file], 'w'){|f| f.write(111111) }
+
+      id2 = Eye::PidIdentity::Actor.new(C.tmp_file_pids)
+      stub(id2).system_identity.with(111111) { 2222222 }
+      id2.set_identity(111111)
+      id2.save
+      Eye::PidIdentity.actor.load
+
+      Eye::PidIdentity.identity(111111).should be
+
+      @process = start_ok_process
+      @process.state_name.should == :up
+      Eye::PidIdentity.identity(@pid).should be
+      Eye::PidIdentity.identity(111111).should be_nil
+    end
   end
 
   it "when process removed, its removed from pid_checker" do
