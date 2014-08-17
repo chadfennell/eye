@@ -120,7 +120,7 @@ class Eye::PidIdentity
     end
 
     def save_file(filename, data)
-      tmp = filename + ".tmp"
+      tmp = filename + ".tmp." + "#{rand(100000)}"
       File.open(tmp, 'w') { |f| f.write(encode(data)) }
       FileUtils.mv(tmp, filename)
     rescue Object => ex
