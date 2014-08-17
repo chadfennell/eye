@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 describe Eye::PidIdentity do
   subject { Eye::PidIdentity }
-  before { Eye::PidIdentity.set("/tmp/eye", $$) }
+  before { subject.set("/tmp/eye", $$) }
 
   it "should save" do
     stub(subject.actor).system_identity(1111) { 22222 }
@@ -34,6 +34,13 @@ describe Eye::PidIdentity do
       subject.check("/tmp/bla", 1234324).should == :unknown
       subject.check("/tmp/eye", 1234324).should == :unknown
       subject.check("/tmp/bla", $$).should == :unknown
+    end
+
+    it "check :unknown when die" do
+      pid = Process.spawn "sleep", "1"; Process.detach(pid)
+      subject.set("/tmp/2", pid)
+      sleep 2
+      subject.check("/tmp/2", pid).should == :unknown
     end
 
     it "check :bad" do

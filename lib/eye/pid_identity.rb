@@ -88,7 +88,10 @@ class Eye::PidIdentity
       h = @pids[pid_file]
       return :unknown if !h || h[:pid] != pid
 
-      system_identity(h[:pid]) == h[:id] ? :ok : :bad
+      id = system_identity(h[:pid])
+      return :unknown unless id
+
+      id == h[:id] ? :ok : :bad
     end
 
     def system_identity(pid)
