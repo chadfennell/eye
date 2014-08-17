@@ -1,4 +1,5 @@
 require 'celluloid'
+require 'yaml'
 
 # MiniDb of pids, manages hash { pid => identity }
 #   and saves it every 2s to disk if needed
@@ -13,24 +14,24 @@ class Eye::PidIdentity
       @actor ||= Actor.new
     end
 
-    def identity(pid)
-      actor.identity(pid)
+    def set(pid_file, pid)
+      actor.set(pid_file, pid)
     end
 
-    def set_identity(pid)
-      actor.set_identity(pid)
+    def get(pid_file, pid)
+      actor.get(pid_file, pid)
     end
 
-    def remove_identity(pid)
-      actor.remove_identity(pid)
-    end
-
-    def check_identity(pid)
-      actor.check_identity(pid)
+    def check(pid_file, pid)
+      actor.check(pid_file, pid)
     end
 
     def clear
-      @actor.clear if @actor
+      actor.clear
+    end
+
+    def debug
+      actor.pids
     end
   end
 
@@ -38,6 +39,8 @@ class Eye::PidIdentity
     include Celluloid
 
     attr_reader :pids
+
+    finalizer :save
 
     def initialize(filename, interval = 2)
       @filename = filename
@@ -64,18 +67,26 @@ class Eye::PidIdentity
       save_file(@filename, @pids) if @filename
     end
 
-    def identity(pid)
-      @pids[pid]
+    def get(pid_file, pid)
+      h = @pids[pid_file]
+      h[:id] if h && h[:pid] == pid
     end
 
-    def set_identity(pid)
-      @pids[pid] = system_identity(pid)
+    def set(pid_file, pid)
+      if pid
+        @pids[pid_file] = { :pid => pid, :id => system_identity(pid) }
+      else
+        @pids.delete(pid_file)
+      end
       @need_sync = true
     end
 
-    def remove_identity(pid)
-      @pids.delete(pid)
-      @need_sync = true
+    # result is [:bad, :ok, :unknown]
+    def check(pid_file, pid)
+      h = @pids[pid_file]
+      return :unknown if !h || h[:pid] != pid
+
+      system_identity(h[:pid]) == h[:id] ? :ok : :bad
     end
 
     def system_identity(pid)
@@ -87,20 +98,11 @@ class Eye::PidIdentity
       @need_sync = true
     end
 
-    # nil - identity not found
-    # false - bad identity
-    # true - ok identity
-    def check_identity(pid)
-      if id = identity(pid)
-        system_identity(pid) == id
-      end
-    end
-
   private
     def read_file(filename)
       res = nil
       if File.exists?(filename)
-        res = Marshal.load(File.read(filename))
+        res = decode(File.read(filename))
         info "pidsdb #{filename} loaded"
       else
         warn "pidsdb #{filename} not found"
@@ -113,10 +115,22 @@ class Eye::PidIdentity
     end
 
     def save_file(filename, data)
-      File.open(filename, 'w') { |f| f.write(Marshal.dump(data)) }
+      tmp = filename + ".tmp"
+      File.open(tmp, 'w') { |f| f.write(encode(data)) }
+      FileUtils.mv(tmp, filename)
     rescue Object => ex
       log_ex(ex)
       nil
+    end
+
+    def encode(content)
+      #Marshal.dump content
+      YAML.dump content
+    end
+
+    def decode(content)
+      #Marshal.load content
+      YAML.load content
     end
   end
 end

@@ -3,9 +3,10 @@ require 'timeout'
 module Eye::Process::System
 
   def pid=(new_pid)
-    Eye::PidIdentity.remove_identity(self.pid) if self.pid && self.pid != new_pid
-    @pid = new_pid
-    Eye::PidIdentity.set_identity(@pid) if @pid
+    if new_pid != @pid
+      @pid = new_pid
+      Eye::PidIdentity.set(pid_file_ex, @pid)
+    end
   end
 
   def load_pid_from_file
@@ -14,9 +15,8 @@ module Eye::Process::System
       _pid > 0 ? _pid : nil
     end
 
-    if res && (Eye::PidIdentity.check_identity(res) == false)
-      warn "pid_identity for <#{res}> is wrong, pid_file probably pointed to wrong process, skipping this pid"
-      Eye::PidIdentity.remove_identity(res)
+    if res && (Eye::PidIdentity.check(pid_file_ex, res) == :bad)
+      warn "pid_identity for <#{res}> is wrong, pid_file probably pointed to wrong process, not accepting this pid"
       clear_pid_file
       res = nil
     end

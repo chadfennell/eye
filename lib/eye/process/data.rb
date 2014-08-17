@@ -20,6 +20,10 @@ module Eye::Process::Data
     @full_name ||= [app_name, group_name, self[:name]].compact.join(':')
   end
 
+  def pid_file_ex
+    self[:pid_file_ex]
+  end
+
   def status_data(debug = false)
     p_st = self_status_data(debug)
 

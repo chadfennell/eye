@@ -4,53 +4,72 @@ describe "Eye::PidIdentity" do
 
   it "set identity when process daemonized by eye" do
     @process = start_ok_process(C.p1)
-    Eye::PidIdentity.identity(@pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
   end
 
   it "set identity when process self-daemonized" do
     @process = start_ok_process(C.p2)
-    Eye::PidIdentity.identity(@pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
   end
 
   describe "read pid_file" do
-    it "process exists, pid_checker no identity, trusting and save identity" do
+    it "process exists, no identity, trusting and save identity" do
       cfg = C.p1
       @pid = Eye::System.daemonize("ruby sample.rb", {:environment => {"ENV1" => "SECRET1"},
         :working_dir => cfg[:working_dir], :stdout => @log})[:pid]
       File.open(cfg[:pid_file], 'w'){|f| f.write(@pid) }
 
-      Eye::PidIdentity.identity(@pid).should be_nil
+      Eye::PidIdentity.get(C.p1[:pid_file], @pid).should be_nil
 
       @process = start_ok_process
 
       sleep 3
 
       @process.state_name.should == :up
-      Eye::PidIdentity.identity(@pid).should be
+      Eye::PidIdentity.get(C.p1[:pid_file], @pid).should be
       @process.pid.should == @pid
     end
 
-    it "process exists, pid_checker exists, ident is ok" do
+    it "process exists, identity exists for wrong pid, trusting and save identity" do
       cfg = C.p1
       @pid = Eye::System.daemonize("ruby sample.rb", {:environment => {"ENV1" => "SECRET1"},
         :working_dir => cfg[:working_dir], :stdout => @log})[:pid]
       File.open(cfg[:pid_file], 'w'){|f| f.write(@pid) }
 
-      Eye::PidIdentity.set_identity(@pid)
-      Eye::PidIdentity.identity(@pid).should be
-      id = Eye::PidIdentity.identity(@pid)
+      Eye::PidIdentity.set(cfg[:pid_file], $$)
+      Eye::PidIdentity.get(cfg[:pid_file], $$).should be
 
       @process = start_ok_process
 
       sleep 3
 
       @process.state_name.should == :up
-      Eye::PidIdentity.identity(@pid).should be
-      Eye::PidIdentity.identity(@pid).should == id
+      Eye::PidIdentity.get(cfg[:pid_file], $$).should be_nil
+      Eye::PidIdentity.get(C.p1[:pid_file], @pid).should be
       @process.pid.should == @pid
     end
 
-    it "process exists, pid_checker exists, ident is bad" do
+    it "process exists, identity exists, ident is ok" do
+      cfg = C.p1
+      @pid = Eye::System.daemonize("ruby sample.rb", {:environment => {"ENV1" => "SECRET1"},
+        :working_dir => cfg[:working_dir], :stdout => @log})[:pid]
+      File.open(cfg[:pid_file], 'w'){|f| f.write(@pid) }
+
+      Eye::PidIdentity.set(cfg[:pid_file], @pid)
+      Eye::PidIdentity.get(cfg[:pid_file], @pid).should be
+      id = Eye::PidIdentity.get(cfg[:pid_file], @pid)
+
+      @process = start_ok_process
+
+      sleep 3
+
+      @process.state_name.should == :up
+      Eye::PidIdentity.get(cfg[:pid_file], @pid).should be
+      Eye::PidIdentity.get(cfg[:pid_file], @pid).should == id
+      @process.pid.should == @pid
+    end
+
+    it "process exists, identity exists, ident is bad" do
       cfg = C.p1
       old_pid = Eye::System.daemonize("ruby sample.rb", {:environment => {"ENV1" => "SECRET1"},
         :working_dir => cfg[:working_dir], :stdout => @log})[:pid]
@@ -58,12 +77,12 @@ describe "Eye::PidIdentity" do
 
       id2 = Eye::PidIdentity::Actor.new(C.tmp_file_pids)
       stub(id2).system_identity.with(old_pid) { 2222222 }
-      id2.set_identity(old_pid)
+      id2.set(cfg[:pid_file], old_pid)
       id2.save
 
       Eye::PidIdentity.actor.load
 
-      Eye::PidIdentity.identity(old_pid).should be
+      Eye::PidIdentity.get(cfg[:pid_file], old_pid).should be
 
       @process = start_ok_process
 
@@ -71,8 +90,8 @@ describe "Eye::PidIdentity" do
 
       @process.pid.should_not == old_pid
       @process.state_name.should == :up
-      Eye::PidIdentity.identity(old_pid).should be_nil
-      Eye::PidIdentity.identity(@process.pid).should be
+      Eye::PidIdentity.get(cfg[:pid_file], old_pid).should be_nil
+      Eye::PidIdentity.get(cfg[:pid_file], @process.pid).should be
 
       @pids << old_pid
     end
@@ -83,7 +102,7 @@ describe "Eye::PidIdentity" do
 
       @process = start_ok_process
       @process.state_name.should == :up
-      Eye::PidIdentity.identity(@pid).should be
+      Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
     end
 
     it "process not exists, identity is, should rewrite" do
@@ -92,49 +111,69 @@ describe "Eye::PidIdentity" do
 
       id2 = Eye::PidIdentity::Actor.new(C.tmp_file_pids)
       stub(id2).system_identity.with(111111) { 2222222 }
-      id2.set_identity(111111)
+      id2.set(cfg[:pid_file], 111111)
       id2.save
       Eye::PidIdentity.actor.load
 
-      Eye::PidIdentity.identity(111111).should be
+      Eye::PidIdentity.get(cfg[:pid_file], 111111).should be
 
       @process = start_ok_process
       @process.state_name.should == :up
-      Eye::PidIdentity.identity(@pid).should be
-      Eye::PidIdentity.identity(111111).should be_nil
+      Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
+      Eye::PidIdentity.get(@process.pid_file_ex, @pid).should_not == 2222222
+      Eye::PidIdentity.get(@process.pid_file_ex, 111111).should be_nil
+    end
+
+    it "process not exists, identity is for wrong pid, should rewrite" do
+      cfg = C.p1
+      File.open(cfg[:pid_file], 'w'){|f| f.write(111111) }
+
+      id2 = Eye::PidIdentity::Actor.new(C.tmp_file_pids)
+      stub(id2).system_identity.with(111112) { 2222222 }
+      id2.set(cfg[:pid_file], 111112)
+      id2.save
+      Eye::PidIdentity.actor.load
+
+      Eye::PidIdentity.get(cfg[:pid_file], 111112).should be
+
+      @process = start_ok_process
+      @process.state_name.should == :up
+      Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
+      Eye::PidIdentity.get(@process.pid_file_ex, @pid).should_not == 2222222
+      Eye::PidIdentity.get(@process.pid_file_ex, 111112).should be_nil
     end
   end
 
-  it "when process removed, its removed from pid_checker" do
+  it "when process removed, its should not remove from pid_identity" do
     @process = start_ok_process
-    Eye::PidIdentity.identity(@pid).should be
+    Eye::PidIdentity.get(pf = @process.pid_file_ex, @pid).should be
     @process.delete
-    Eye::PidIdentity.identity(@pid).should be_nil
+    Eye::PidIdentity.get(pf, @pid).should be
   end
 
-  it "when process stopped, its removed from pid_checker" do
+  it "when process stopped, its removed from pid_identity" do
     @process = start_ok_process
-    Eye::PidIdentity.identity(@pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
     @process.stop
-    Eye::PidIdentity.identity(@pid).should be_nil
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be_nil
   end
 
-  it "when process unmonitored, its removed from pid_checker" do
+  it "when process unmonitored, its removed from pid_identity" do
     @process = start_ok_process
-    Eye::PidIdentity.identity(@pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
     @process.unmonitor
-    Eye::PidIdentity.identity(@pid).should be_nil
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be_nil
   end
 
   it "process crashed, identity rewrited" do
     @process = start_ok_process
-    Eye::PidIdentity.identity(@pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
 
     Eye::System.send_signal(@pid, 9)
     sleep 4
 
-    Eye::PidIdentity.identity(@pid).should be_nil
-    Eye::PidIdentity.identity(@process.pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be_nil
+    Eye::PidIdentity.get(@process.pid_file_ex, @process.pid).should be
   end
 
   it "emulate fast change pid" do
@@ -157,8 +196,8 @@ describe "Eye::PidIdentity" do
     @process.state_name.should == :up
     @process.pid.should_not == pid
 
-    Eye::PidIdentity.identity(pid).should be_nil
-    Eye::PidIdentity.identity(@process.pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, pid).should be_nil
+    Eye::PidIdentity.get(@process.pid_file_ex, @process.pid).should be
   end
 
   it "emulate, eye trusting external pid_file change, and update pid, should update identity too, and remove old identity" do
@@ -171,8 +210,9 @@ describe "Eye::PidIdentity" do
       :working_dir => cfg[:working_dir], :stdout => @log})[:pid]
     File.open(cfg[:pid_file], 'w'){|f| f.write(@pid) }
 
-    Eye::PidIdentity.identity(@pid).should be_nil
-    Eye::PidIdentity.identity(old_pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be_nil
+    Eye::PidIdentity.get(@process.pid_file_ex, old_pid).should be
+    @process.pid.should == old_pid
 
     sleep 5 # here eye should understand that pid-file changed
 
@@ -186,13 +226,13 @@ describe "Eye::PidIdentity" do
 
     @process.state_name.should == :up
 
-    Eye::PidIdentity.identity(@pid).should be
-    Eye::PidIdentity.identity(old_pid).should be_nil
+    Eye::PidIdentity.get(@process.pid_file_ex, @pid).should be
+    Eye::PidIdentity.get(@process.pid_file_ex, old_pid).should be_nil
 
     @pids << old_pid # to gc this process too
   end
 
-  it "when restart all processes, pid_checker update all pids, and save" do
+  it "when restart all processes, update all pids, and save" do
   end
 
   it "intergration, load, delete, restart, load again, should have valid set of pids" do

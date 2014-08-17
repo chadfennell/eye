@@ -13,7 +13,7 @@ module Eye::Controller::Status
       :pid_path => Eye::Local::pid_path,
       :sock_path => Eye::Local::socket_path,
       :actors => actors,
-      :pid_identity => Eye::PidIdentity.actor.pids
+      :pid_identity => Eye::PidIdentity.debug
     }
 
     res[:config_yaml] = YAML.dump(current_config.to_h) if h[:config].present?

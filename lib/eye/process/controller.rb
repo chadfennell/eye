@@ -63,7 +63,6 @@ module Eye::Process::Controller
     remove_children
     remove_triggers
 
-    self.pid = nil
     terminate
   end
 
