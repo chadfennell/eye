@@ -47,7 +47,7 @@ private
 
   def check_pid_identity
     if Eye::PidIdentity.check(pid_file_ex, self.pid) == :bad
-      warn "check_alive: process <#{self.pid}> identity changed"
+      warn "check_alive: process <#{self.pid}> pid_identity changed"
       notify :info, 'crashed by pid identity!'
       clear_pid_file if control_pid? && self.pid && load_pid_from_file == self.pid
 

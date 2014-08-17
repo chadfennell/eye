@@ -9,7 +9,7 @@ class Eye::PidIdentity
     attr_reader :actor
 
     def setup(filename, interval = 5)
-      @actor = Actor.new(filename, interval)
+      @actor ||= Actor.new(filename, interval)
     end
 
     def actor
