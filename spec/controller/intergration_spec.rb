@@ -96,4 +96,29 @@ describe "Intergration" do
     @pids.map { |p| Eye::System.pid_alive?(p) }.uniq.should == [false]
   end
 
+  it "restart sample1, stop forking, delete sample2, load config again, restart samples" do    
+    Eye::PidIdentity.debug.size.should == 3
+
+    @controller.send_command(:restart, "sample1")
+    @controller.send_command(:stop, "forking")
+    @controller.send_command(:delete, "sample2")
+
+    sleep 5
+
+    # reload config again
+    @controller.load_erb(fixture("dsl/integration.erb"))
+
+    sleep 1
+
+    @controller.send_command(:restart, "samples")
+    sleep 3
+
+    Eye::PidIdentity.debug.size.should == 2
+
+    @p2 = @controller.all_processes.detect{|c| c.name == 'sample2' }
+    Eye::PidIdentity.debug.values.map { |c| c[:pid] }.sort.should == [@p1, @p2].map(&:pid).sort
+
+    @pids << @p1.pid
+    @pids << @p2.pid
+  end
 end

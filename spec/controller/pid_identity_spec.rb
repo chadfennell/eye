@@ -231,14 +231,4 @@ describe "Eye::PidIdentity" do
 
     @pids << old_pid # to gc this process too
   end
-
-  it "when restart all processes, update all pids, and save" do
-  end
-
-  it "intergration, load, delete, restart, load again, should have valid set of pids" do
-  end
-
-  it "eye quit, but pids file was written, than eye load, and all processes just not exists" do
-    # should clear old pids from db
-  end
 end

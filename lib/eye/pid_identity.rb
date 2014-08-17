@@ -1,17 +1,19 @@
 require 'celluloid'
 require 'yaml'
 
-# MiniDb of pids, manages hash { pid => identity }
-#   and saves it every 2s to disk if needed
+# MiniDb of pids, manages hash { pid_file => {:pid => pid, :id => identity } }
+#   and saves it every 5s to disk if needed
 
 class Eye::PidIdentity
   class << self
-    def set_actor(filename, interval = 2)
+    attr_reader :actor
+
+    def setup(filename, interval = 5)
       @actor = Actor.new(filename, interval)
     end
 
     def actor
-      @actor ||= Actor.new
+      @actor ||= Actor.new(Eye::Local.pids_path)
     end
 
     def set(pid_file, pid)
@@ -42,7 +44,7 @@ class Eye::PidIdentity
 
     finalizer :save
 
-    def initialize(filename, interval = 2)
+    def initialize(filename, interval = 5)
       @filename = filename
       @pids = {}
       @need_sync = false

@@ -64,7 +64,7 @@ RSpec.configure do |config|
   config.before(:all) do
     Eye::SystemResources.cache.setup_expire(1.0)
     FileUtils.rm(C.tmp_file_pids) rescue nil
-    Eye::PidIdentity.set_actor(C.tmp_file_pids, 0.5)
+    Eye::PidIdentity.setup(C.tmp_file_pids, 0.5)
   end
 
   config.before(:each) do
