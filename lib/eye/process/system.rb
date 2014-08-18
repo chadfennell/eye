@@ -15,7 +15,7 @@ module Eye::Process::System
       _pid > 0 ? _pid : nil
     end
 
-    if res && (Eye::PidIdentity.check(pid_file_ex, res) == :bad)
+    if res && (res != self.pid) && (Eye::PidIdentity.check(pid_file_ex, res) == :bad)
       warn "pid_identity for <#{res}> is wrong, pid_file probably pointed to wrong process, not accepting this pid"
       clear_pid_file
       res = nil
